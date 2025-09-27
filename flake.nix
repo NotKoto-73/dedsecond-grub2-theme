@@ -1,23 +1,19 @@
 {
   description = "Flake to manage DedSec grub themes from Vandal";
-
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
   };
-
   outputs = { self, nixpkgs }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
     in
-    with nixpkgs.lib;
     {
-      nixosModule = { config, ... }:
+      nixosModules.default = { config, lib, ... }:
         let
           cfg = config.boot.loader.grub.dedsec-theme;
-
           dedsec-grub-theme = pkgs.stdenv.mkDerivation {
-            name = "decsec-grub-theme";
+            name = "dedsec-grub-theme";
             src = ./.;
             installPhase = ''
               mkdir -p $out/grub/theme/
@@ -32,16 +28,16 @@
         {
           options = {
             boot.loader.grub.dedsec-theme = {
-              enable = mkOption {
-                type = types.bool;
+              enable = lib.mkOption {
+                type = lib.types.bool;
                 default = false;
                 example = true;
                 description = ''
                   Enable DedSec grub theme from Vandal
                 '';
               };
-              style = mkOption {
-                type = types.enum [
+              style = lib.mkOption {
+                type = lib.types.enum [
                   "brainwash"
                   "compact"
                   "comments"
@@ -64,32 +60,33 @@
                   "wannacry"
                   "wrench"
                 ];
+                default = "hackerden";
                 example = "hackerden";
                 description = ''
                   The theme to use for grub
                 '';
               };
-              icon = mkOption {
-                type = types.enum [ "color" "white" ];
+              icon = lib.mkOption {
+                type = lib.types.enum [ "color" "white" ];
                 default = "color";
                 example = "color";
               };
-              resolution = mkOption {
-                type = types.enum [ "1080p" "1440p" ];
+              resolution = lib.mkOption {
+                type = lib.types.enum [ "1080p" "1440p" ];
                 default = "1080p";
                 example = "1080p";
               };
-
             };
           };
-
-          config = mkIf cfg.enable (mkMerge [{
+          config = lib.mkIf cfg.enable {
             environment.systemPackages = [ dedsec-grub-theme ];
             boot.loader.grub = {
               theme = "${dedsec-grub-theme}/grub/theme";
             };
-          }]);
+          };
         };
+      
+      # For backward compatibility
+      nixosModule = self.nixosModules.default;
     };
 }
-
